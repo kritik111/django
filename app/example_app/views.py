@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 # a form view for our todos from our models
 from django.views import View
 from django.views.generic.edit import FormView
+from django.views.generic import TemplateView
 from .models import Todo
 from .forms import TodoForm
 
@@ -38,3 +39,6 @@ class DeleteTodoView(View):
         todo = get_object_or_404(Todo, pk=self.kwargs['pk'])
         todo.delete()
         return redirect(self.success_url)
+
+class FlowerView(TemplateView):
+    template_name = 'flower.html'

@@ -1,0 +1,47 @@
+body {
+  background: linear-gradient(to top, #a7d8ff 0%, #fffbe0 100%);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+#sun-flower-bg {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 90vh;
+  position: relative;
+}
+#flower-svg {
+  width: 400px;
+  height: 600px;
+  display: block;
+  z-index: 2;
+}
+#sun {
+  filter: url(#glow);
+  opacity: 0.95;
+  transition: cx 1s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+#stem {
+  transform-origin: 200px 550px;
+  transform: scaleY(0);
+  transition: transform 1.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+#leaves path {
+  transition: opacity 1s, transform 1s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-origin: 200px 520px;
+}
+.petal {
+  transition: rx 1.2s cubic-bezier(0.4, 0.2, 0.2, 1), ry 1.2s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+#flower-center {
+  transition: r 1.2s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+@keyframes sway {
+  0% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+  100% { transform: rotate(-2deg); }
+}
+.sway {
+  animation: sway 3s ease-in-out infinite;
+}
