@@ -17,7 +17,11 @@ class TodoFormView(FormView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['todos'] = Todo.objects.all()
+        todos = Todo.objects.all().order_by('-created_at')
+        context['todos'] = todos
+        context['total_todos'] = todos.count()
+        context['completed_todos'] = todos.filter(completed=True).count()
+        context['pending_todos'] = todos.filter(completed=False).count()
         return context
     
 # Toggle todo completed FormView
@@ -30,7 +34,7 @@ class ToggleTodoView(View):
         todo.save()
         return redirect(self.success_url)
     
-# Toggle todo completed FormView
+# Delete todo FormView
 class DeleteTodoView(View):
     success_url = '/'
     

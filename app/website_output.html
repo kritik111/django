@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TaskFlow - Beautiful Todo Management{% endblock title %}</title>
+    <title>
+TaskFlow - Your Personal Task Manager
+</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -199,9 +201,133 @@
     </section>
 
     <main class="section">
-        {% block content %}
-        <!-- Default content goes here -->
-        {% endblock content %}
+        
+<div class="container is-max-desktop">
+    <!-- Statistics Section -->
+    <div class="columns is-multiline mb-6">
+        <div class="column is-4">
+            <div class="stats-card">
+                <div class="has-text-weight-bold is-size-3 has-text-primary">
+                    0
+                </div>
+                <div class="has-text-grey is-size-6">Total Tasks</div>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="stats-card">
+                <div class="has-text-weight-bold is-size-3 has-text-success">
+                    0
+                </div>
+                <div class="has-text-grey is-size-6">Completed</div>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="stats-card">
+                <div class="has-text-weight-bold is-size-3 has-text-warning">
+                    0
+                </div>
+                <div class="has-text-grey is-size-6">Pending</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Task Section -->
+    <div class="card-modern p-6 mb-6">
+        <h2 class="title is-3 has-text-centered mb-5">
+            <i class="fas fa-plus-circle has-text-primary mr-3"></i>
+            Add New Task
+        </h2>
+        
+        <form method="post" class="columns is-vcentered">
+            <input type="hidden" name="csrfmiddlewaretoken" value="qZtYO29oHIoNTyxM0Ak0z2oV3xAXkBqKjyjqx9QZevt1oyJfj8GjIhuK59iWAQ4i">
+            <div class="column">
+                <div class="field">
+                    <label class="label is-size-5">Task Title</label>
+                    <div class="control has-icons-left">
+                        <input class="input is-large input-modern" 
+                               type="text" 
+                               name="title" 
+                               placeholder="What needs to be done?" 
+                               value=""
+                               required>
+                        <span class="icon is-left">
+                            <i class="fas fa-tasks"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-narrow">
+                <div class="field">
+                    <label class="label is-size-5">&nbsp;</label>
+                    <div class="control">
+                        <button type="submit" class="button is-large btn-gradient-primary">
+                            <span class="icon">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                            <span>Add Task</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tasks List Section -->
+    
+    <!-- Empty State -->
+    <div class="card-modern p-6 has-text-centered">
+        <div class="content">
+            <i class="fas fa-clipboard-list is-size-1 has-text-grey-lighter mb-4"></i>
+            <h3 class="title is-4 has-text-grey">No tasks yet!</h3>
+            <p class="subtitle is-6 has-text-grey">
+                Start by adding your first task above. You've got this! 🚀
+            </p>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Quick Add Floating Button -->
+<button class="floating-action" id="quickAddBtn" title="Quick Add Task">
+    <i class="fas fa-plus"></i>
+</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quick add functionality
+    const quickAddBtn = document.getElementById('quickAddBtn');
+    const taskInput = document.querySelector('input[name="title"]');
+    
+    quickAddBtn.addEventListener('click', function() {
+        taskInput.focus();
+        taskInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    // Auto-focus on input when page loads
+    if (taskInput) {
+        taskInput.focus();
+    }
+
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + Enter to submit form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            const form = document.querySelector('form');
+            if (form) form.submit();
+        }
+    });
+
+    // Add success message for completed tasks
+    const completedTasks = document.querySelectorAll('.todo-item.completed');
+    completedTasks.forEach(task => {
+        const icon = task.querySelector('.fa-check-circle');
+        if (icon) {
+            icon.style.animation = 'pulse 2s infinite';
+        }
+    });
+});
+</script>
+
     </main>
 
     <footer class="footer" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
