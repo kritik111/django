@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import TodoFormView, ToggleTodoView, DeleteTodoView
+from .views import TodoFormView, ToggleTodoView, DeleteTodoView, FlowerView
 
 app_name = 'example_app'
 
@@ -24,4 +24,5 @@ urlpatterns = [
     path('', TodoFormView.as_view(), name='todo_form'),
     path('<int:pk>/toggle/', ToggleTodoView.as_view(), name='toggle_todo'),
     path('<int:pk>/delete/', DeleteTodoView.as_view(), name='delete_todo'),
+    path('flower/', FlowerView.as_view(), name='flower'),
 ]
