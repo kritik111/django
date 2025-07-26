@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}
+Task List - All Your Tasks
+{% endblock title %}
+
+{% block content %}
+<div class="container" x-data="todoListApp()" x-init="init()">
+    <!-- Page Header -->
+    <div class="hero is-medium mb-6">
+        <div class="hero-body has-text-centered">
+            <h1 class="title is-1 has-text-weight-bold fade-in">
+                <span class="icon is-large has-text-primary">
+                    <i class="fas fa-list-ul"></i>
+                </span>
+                Task List
+            </h1>
+            <p class="subtitle is-4 fade-in">Manage and organize all your tasks</p>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="box mb-6">
+        <div class="columns">
+            <div class="column is-4">
+                <div class="field">
+                    <label class="label">Search Tasks</label>
+                    <div class="control has-icons-left">
+                        <input 
+                            class="input" 
+                            type="text" 
+                            placeholder="Search by title..."
+                            x-model="searchQuery"
+                            @input="filterTasks"
+                        >
+                        <span class="icon is-left">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-2">
+                <div class="field">
+                    <label class="label">Status</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select x-model="statusFilter" @change="filterTasks">
+                                <option value="all">All Tasks</option>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-2">
+                <div class="field">
+                    <label class="label">Priority</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select x-model="priorityFilter" @change="filterTasks">
+                                <option value="all">All Priorities</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-2">
+                <div class="field">
+                    <label class="label">Sort By</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select x-model="sortBy" @change="sortTasks">
+                                <option value="created_desc">Newest First</option>
+                                <option value="created_asc">Oldest First</option>
+                                <option value="title_asc">Title A-Z</option>
+                                <option value="title_desc">Title Z-A</option>
+                                <option value="priority_desc">High Priority First</option>
+                                <option value="due_date_asc">Due Date</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-2">
+                <div class="field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button @click="clearFilters()" class="button is-light is-fullwidth">
+                            <span class="icon">
+                                <i class="fas fa-times"></i>
+                            </span>
+                            <span>Clear</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="box mb-4" x-show="selectedTasks.length > 0">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <span class="tag is-info" x-text="selectedTasks.length + ' task(s) selected'"></span>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="buttons">
+                        <button @click="bulkAction('complete_all')" class="button is-success is-small">
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Mark Complete</span>
+                        </button>
+                        <button @click="bulkAction('mark_pending')" class="button is-warning is-small">
+                            <span class="icon">
+                                <i class="fas fa-clock"></i>
+                            </span>
+                            <span>Mark Pending</span>
+                        </button>
+                        <button @click="bulkAction('delete_all')" class="button is-danger is-small">
+                            <span class="icon">
+                                <i class="fas fa-trash"></i>
+                            </span>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Grid -->
+    <div class="columns is-multiline">
+        <template x-for="todo in filteredTasks" :key="todo.id">
+            <div class="column is-6-tablet is-4-desktop">
+                <div 
+                    class="card hover-lift"
+                    :class="{
+                        'has-background-success-light': todo.completed && !darkMode,
+                        'has-background-danger-light': todo.is_overdue && !todo.completed && !darkMode,
+                        'has-background-dark': darkMode
+                    }"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-90"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                >
+                    <div class="card-content">
+                        <div class="media">
+                            <div class="media-left">
+                                <label class="checkbox">
+                                    <input 
+                                        type="checkbox" 
+                                        :value="todo.id" 
+                                        x-model="selectedTasks"
+                                    >
+                                </label>
+                            </div>
+                            <div class="media-content">
+                                <p class="title is-5" 
+                                   :class="todo.completed ? 'has-text-grey' : ''"
+                                   :style="todo.completed ? 'text-decoration: line-through;' : ''"
+                                   x-text="todo.title">
+                                </p>
+                                <p class="subtitle is-6" x-show="todo.description" x-text="todo.description"></p>
+                            </div>
+                            <div class="media-right">
+                                <span class="icon is-large" :class="todo.completed ? 'has-text-success' : 'has-text-warning'">
+                                    <i :class="todo.completed ? 'fas fa-check-circle fa-2x' : 'fas fa-clock fa-2x'"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="content">
+                            <div class="tags">
+                                <span class="tag" 
+                                      :class="{
+                                          'is-danger': todo.priority === 'high',
+                                          'is-warning': todo.priority === 'medium',
+                                          'is-success': todo.priority === 'low'
+                                      }"
+                                      x-text="todo.priority_display">
+                                </span>
+                                <span x-show="todo.is_overdue && !todo.completed" class="tag is-danger">
+                                    <span class="icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </span>
+                                    <span>Overdue</span>
+                                </span>
+                            </div>
+                            
+                            <div class="is-size-7 has-text-grey">
+                                <p>
+                                    <span class="icon">
+                                        <i class="fas fa-calendar"></i>
+                                    </span>
+                                    Created: <span x-text="formatDate(todo.created_at)"></span>
+                                </p>
+                                <p x-show="todo.due_date">
+                                    <span class="icon">
+                                        <i class="fas fa-clock"></i>
+                                    </span>
+                                    Due: <span x-text="formatDate(todo.due_date)"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <footer class="card-footer">
+                        <form method="post" :action="'/{{ todo.id }}/toggle/'" class="card-footer-item">
+                            {% csrf_token %}
+                            <button 
+                                type="submit" 
+                                class="button is-small is-fullwidth"
+                                :class="todo.completed ? 'is-warning' : 'is-success'"
+                            >
+                                <span class="icon">
+                                    <i :class="todo.completed ? 'fas fa-undo' : 'fas fa-check'"></i>
+                                </span>
+                                <span x-text="todo.completed ? 'Undo' : 'Complete'"></span>
+                            </button>
+                        </form>
+                        <form method="post" :action="'/{{ todo.id }}/delete/'" class="card-footer-item">
+                            {% csrf_token %}
+                            <button 
+                                type="submit" 
+                                class="button is-small is-danger is-fullwidth"
+                                @click="confirmDelete($event, todo.title)"
+                            >
+                                <span class="icon">
+                                    <i class="fas fa-trash"></i>
+                                </span>
+                                <span>Delete</span>
+                            </button>
+                        </form>
+                    </footer>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- No Tasks Message -->
+    <div x-show="filteredTasks.length === 0" class="has-text-centered py-6">
+        <span class="icon is-large has-text-grey-light">
+            <i class="fas fa-inbox fa-3x"></i>
+        </span>
+        <p class="is-size-4 has-text-grey mt-3">No tasks found</p>
+        <p class="has-text-grey">Try adjusting your search criteria or add a new task</p>
+        <a href="{% url 'example_app:todo_form' %}" class="button is-primary mt-3">
+            <span class="icon">
+                <i class="fas fa-plus"></i>
+            </span>
+            <span>Add New Task</span>
+        </a>
+    </div>
+
+    <!-- Pagination would go here if needed -->
+</div>
+
+<script>
+function todoListApp() {
+    return {
+        todos: [],
+        filteredTasks: [],
+        selectedTasks: [],
+        searchQuery: '',
+        statusFilter: 'all',
+        priorityFilter: 'all',
+        sortBy: 'created_desc',
+        
+        init() {
+            this.todos = [
+                {% for todo in todos %}
+                {
+                    id: {{ todo.id }},
+                    title: "{{ todo.title|escapejs }}",
+                    description: "{{ todo.description|escapejs }}",
+                    completed: {{ todo.completed|yesno:"true,false" }},
+                    priority: "{{ todo.priority }}",
+                    priority_display: "{{ todo.get_priority_display }}",
+                    created_at: "{{ todo.created_at|date:'Y-m-d H:i' }}",
+                    due_date: "{{ todo.due_date|date:'Y-m-d H:i'|default:'' }}",
+                    is_overdue: {{ todo.is_overdue|yesno:"true,false" }}
+                },
+                {% endfor %}
+            ];
+            this.filterTasks();
+        },
+        
+        filterTasks() {
+            let filtered = [...this.todos];
+            
+            // Search filter
+            if (this.searchQuery) {
+                filtered = filtered.filter(todo => 
+                    todo.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                    todo.description.toLowerCase().includes(this.searchQuery.toLowerCase())
+                );
+            }
+            
+            // Status filter
+            if (this.statusFilter === 'completed') {
+                filtered = filtered.filter(todo => todo.completed);
+            } else if (this.statusFilter === 'pending') {
+                filtered = filtered.filter(todo => !todo.completed);
+            } else if (this.statusFilter === 'overdue') {
+                filtered = filtered.filter(todo => todo.is_overdue && !todo.completed);
+            }
+            
+            // Priority filter
+            if (this.priorityFilter !== 'all') {
+                filtered = filtered.filter(todo => todo.priority === this.priorityFilter);
+            }
+            
+            this.filteredTasks = filtered;
+            this.sortTasks();
+        },
+        
+        sortTasks() {
+            const [field, direction] = this.sortBy.split('_');
+            
+            this.filteredTasks.sort((a, b) => {
+                let aVal = a[field];
+                let bVal = b[field];
+                
+                if (field === 'priority') {
+                    const priorityOrder = { high: 3, medium: 2, low: 1 };
+                    aVal = priorityOrder[a.priority];
+                    bVal = priorityOrder[b.priority];
+                }
+                
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+        },
+        
+        clearFilters() {
+            this.searchQuery = '';
+            this.statusFilter = 'all';
+            this.priorityFilter = 'all';
+            this.sortBy = 'created_desc';
+            this.filterTasks();
+        },
+        
+        async bulkAction(action) {
+            if (this.selectedTasks.length === 0) return;
+            
+            try {
+                const response = await fetch('/api/bulk-action/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        todo_ids: this.selectedTasks
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred');
+            }
+        },
+        
+        confirmDelete(event, title) {
+            if (!confirm(`Are you sure you want to delete "${title}"?`)) {
+                event.preventDefault();
+                return false;
+            }
+        },
+        
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+    }
+}
+</script>
+{% endblock content %}

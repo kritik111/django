@@ -1,58 +1,334 @@
 {% extends "base.html" %}
 
 {% block title %}
-Defang Todos
+Task Master - Your Productivity Hub
 {% endblock title %}
 
 {% block content %}
-<div class="container">
-    <h1 class="is-size-1 has-text-weight-bold">Defang Todos</h1>
-    <form method="post" class="box is-flex is-flex-direction-column" style="gap: 20px;">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <div>
-            <button type="submit" class="button is-primary">Submit</button>
+<div class="container" x-data="todoApp()" x-init="init()">
+    <!-- Hero Section -->
+    <div class="hero is-medium mb-6">
+        <div class="hero-body has-text-centered">
+            <h1 class="title is-1 has-text-weight-bold fade-in">
+                <span class="icon is-large has-text-primary">
+                    <i class="fas fa-tasks"></i>
+                </span>
+                Task Master
+            </h1>
+            <p class="subtitle is-4 fade-in">Your ultimate productivity companion</p>
+            <div class="stats is-flex is-justify-content-center is-flex-wrap" style="gap: 2rem;">
+                <div class="stat-item has-text-centered">
+                    <p class="is-size-2 has-text-weight-bold has-text-primary" x-text="totalTodos"></p>
+                    <p class="is-size-6 has-text-grey">Total Tasks</p>
+                </div>
+                <div class="stat-item has-text-centered">
+                    <p class="is-size-2 has-text-weight-bold has-text-success" x-text="completedTodos"></p>
+                    <p class="is-size-6 has-text-grey">Completed</p>
+                </div>
+                <div class="stat-item has-text-centered">
+                    <p class="is-size-2 has-text-weight-bold has-text-warning" x-text="pendingTodos"></p>
+                    <p class="is-size-6 has-text-grey">Pending</p>
+                </div>
+                <div class="stat-item has-text-centered">
+                    <p class="is-size-2 has-text-weight-bold has-text-info" x-text="completionRate + '%'"></p>
+                    <p class="is-size-6 has-text-grey">Completion Rate</p>
+                </div>
+            </div>
         </div>
-    </form>
-</div>
-<div class="container mt-4">
-    <h2 class="is-size-2 has-text-weight-bold">Current Todos</h2>
-    <ul class="is-flex is-flex-direction-column" style="gap: 20px;">
-        {% for todo in todos %}
-        <li class="box">
-            <div class="is-size-4 mb-2">
-                {% if todo.completed %}
-                <span class="icon has-text-success">
-                    <i class="fas fa-check"></i>
-                </span>
-                {% else %}
-                <span class="icon has-text-danger">
-                    <i class="fas fa-times"></i>
-                </span>
-                {% endif %}
+    </div>
+
+    <!-- Add New Task -->
+    <div class="columns is-centered mb-6">
+        <div class="column is-8">
+            <div class="box hover-lift" :class="darkMode ? 'has-background-dark' : ''">
+                <h2 class="title is-4 has-text-centered mb-4">
+                    <span class="icon has-text-primary">
+                        <i class="fas fa-plus-circle"></i>
+                    </span>
+                    Add New Task
+                </h2>
+                <form method="post" @submit="handleSubmit">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label class="label">Task Title</label>
+                        <div class="control has-icons-left">
+                            <input 
+                                class="input is-large" 
+                                type="text" 
+                                name="title" 
+                                placeholder="What needs to be done?"
+                                required
+                                x-model="newTaskTitle"
+                                @input="validateInput"
+                            >
+                            <span class="icon is-left">
+                                <i class="fas fa-pencil-alt"></i>
+                            </span>
+                        </div>
+                        <p class="help" x-show="newTaskTitle.length > 0" x-text="'Characters: ' + newTaskTitle.length + '/200'"></p>
+                    </div>
+                    <div class="field">
+                        <label class="label">Priority Level</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="priority" x-model="newTaskPriority">
+                                    <option value="low">🟢 Low Priority</option>
+                                    <option value="medium" selected>🟡 Medium Priority</option>
+                                    <option value="high">🔴 High Priority</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" name="completed">
+                                Mark as completed immediately
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-large is-fullwidth animated-button">
+                                <span class="icon">
+                                    <i class="fas fa-plus"></i>
+                                </span>
+                                <span>Add Task</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="columns is-centered mb-4">
+        <div class="column is-8">
+            <div class="field has-addons">
+                <div class="control is-expanded has-icons-left">
+                    <input 
+                        class="input" 
+                        type="text" 
+                        placeholder="Search tasks..."
+                        x-model="searchQuery"
+                        @input="filterTodos"
+                    >
+                    <span class="icon is-left">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="select">
+                        <select x-model="filterStatus" @change="filterTodos">
+                            <option value="all">All Tasks</option>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks List -->
+    <div class="columns is-centered">
+        <div class="column is-8">
+            <div class="box" :class="darkMode ? 'has-background-dark' : ''">
+                <h2 class="title is-4 has-text-centered mb-4">
+                    <span class="icon has-text-info">
+                        <i class="fas fa-list-check"></i>
+                    </span>
+                    Your Tasks
+                </h2>
                 
-                {{ todo.title }}
+                <div x-show="filteredTodos.length === 0" class="has-text-centered py-6">
+                    <span class="icon is-large has-text-grey-light">
+                        <i class="fas fa-inbox fa-3x"></i>
+                    </span>
+                    <p class="is-size-5 has-text-grey mt-3">No tasks found</p>
+                    <p class="has-text-grey" x-show="searchQuery.length > 0">Try adjusting your search criteria</p>
+                </div>
+
+                <div class="todo-list" style="max-height: 600px; overflow-y: auto;">
+                    <template x-for="(todo, index) in filteredTodos" :key="todo.id">
+                        <div 
+                            class="todo-item box mb-3 hover-lift"
+                            :class="{
+                                'completed': todo.completed,
+                                'has-background-success-light': todo.completed && !darkMode,
+                                'has-background-dark': darkMode && !todo.completed,
+                                'has-background-success-dark': darkMode && todo.completed
+                            }"
+                            x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform scale-90"
+                            x-transition:enter-end="opacity-100 transform scale-100"
+                        >
+                            <div class="is-flex is-align-items-center is-justify-content-space-between">
+                                <div class="is-flex is-align-items-center" style="flex: 1;">
+                                    <div class="mr-3">
+                                        <span class="icon is-large" :class="todo.completed ? 'has-text-success' : 'has-text-danger'">
+                                            <i :class="todo.completed ? 'fas fa-check-circle fa-2x' : 'fas fa-clock fa-2x'"></i>
+                                        </span>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <h3 class="is-size-5 has-text-weight-semibold mb-1" 
+                                            :class="todo.completed ? 'has-text-grey' : ''"
+                                            :style="todo.completed ? 'text-decoration: line-through;' : ''"
+                                            x-text="todo.title">
+                                        </h3>
+                                        <p class="is-size-7 has-text-grey">
+                                            <span class="icon is-small">
+                                                <i class="fas fa-calendar"></i>
+                                            </span>
+                                            <span x-text="formatDate(todo.created_at)"></span>
+                                            <span class="ml-2" x-show="todo.priority">
+                                                <span x-show="todo.priority === 'high'" class="tag is-danger is-small">High</span>
+                                                <span x-show="todo.priority === 'medium'" class="tag is-warning is-small">Medium</span>
+                                                <span x-show="todo.priority === 'low'" class="tag is-success is-small">Low</span>
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="buttons">
+                                    <form method="post" :action="'/{{ todo.id }}/toggle/'" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button 
+                                            type="submit" 
+                                            class="button is-small animated-button"
+                                            :class="todo.completed ? 'is-warning' : 'is-success'"
+                                        >
+                                            <span class="icon is-small">
+                                                <i :class="todo.completed ? 'fas fa-undo' : 'fas fa-check'"></i>
+                                            </span>
+                                            <span x-text="todo.completed ? 'Undo' : 'Done'"></span>
+                                        </button>
+                                    </form>
+                                    <form method="post" :action="'/{{ todo.id }}/delete/'" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button 
+                                            type="submit" 
+                                            class="button is-small is-danger animated-button"
+                                            @click="confirmDelete($event, todo.title)"
+                                        >
+                                            <span class="icon is-small">
+                                                <i class="fas fa-trash"></i>
+                                            </span>
+                                            <span>Delete</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
-            <div class="columns">
-                <form method="post" action="{% url 'example_app:toggle_todo' todo.id %}" class="column is-3">
-                    {% csrf_token %}
-                    <input type="hidden" name="todo_id" value="{{ todo.id }}">
-                    <button type="submit" class="button {% if todo.completed %}is-warning{% else %}is-success{% endif %}">
-                        {% if todo.completed %}
-                        Mark as Incomplete
-                        {% else %}
-                        Mark as Complete
-                        {% endif %}
-                    </button>
-                </form>
-                <form method="post" action="{% url 'example_app:delete_todo' todo.id %}" class="column is-3">
-                    {% csrf_token %}
-                    <input type="hidden" name="todo_id" value="{{ todo.id }}">
-                    <button type="submit" class="button is-danger">Delete</button>
-                </form>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="columns is-centered mt-4" x-show="totalTodos > 0">
+        <div class="column is-8">
+            <div class="box has-text-centered" :class="darkMode ? 'has-background-dark' : ''">
+                <p class="is-size-6 mb-2">Overall Progress</p>
+                <progress 
+                    class="progress is-success is-large" 
+                    :value="completedTodos" 
+                    :max="totalTodos"
+                ></progress>
+                <p class="is-size-7 has-text-grey mt-1" x-text="'You have completed ' + completedTodos + ' out of ' + totalTodos + ' tasks'"></p>
             </div>
-        </li>
-        {% endfor %}
-    </ul>
+        </div>
+    </div>
 </div>
+
+<script>
+function todoApp() {
+    return {
+        todos: {{ todos|safe }},
+        filteredTodos: [],
+        searchQuery: '',
+        filterStatus: 'all',
+        newTaskTitle: '',
+        newTaskPriority: 'medium',
+        darkMode: false,
+        
+        get totalTodos() {
+            return this.todos.length;
+        },
+        
+        get completedTodos() {
+            return this.todos.filter(todo => todo.completed).length;
+        },
+        
+        get pendingTodos() {
+            return this.todos.filter(todo => !todo.completed).length;
+        },
+        
+        get completionRate() {
+            return this.totalTodos > 0 ? Math.round((this.completedTodos / this.totalTodos) * 100) : 0;
+        },
+        
+        init() {
+            // Convert Django data to proper format
+            this.todos = [
+                {% for todo in todos %}
+                {
+                    id: {{ todo.id }},
+                    title: "{{ todo.title|escapejs }}",
+                    completed: {{ todo.completed|yesno:"true,false" }},
+                    created_at: "{{ todo.created_at|date:'Y-m-d H:i' }}",
+                    priority: "medium" // Default priority, could be enhanced
+                },
+                {% endfor %}
+            ];
+            this.filterTodos();
+        },
+        
+        filterTodos() {
+            let filtered = this.todos;
+            
+            // Filter by search query
+            if (this.searchQuery) {
+                filtered = filtered.filter(todo => 
+                    todo.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+                );
+            }
+            
+            // Filter by status
+            if (this.filterStatus === 'completed') {
+                filtered = filtered.filter(todo => todo.completed);
+            } else if (this.filterStatus === 'pending') {
+                filtered = filtered.filter(todo => !todo.completed);
+            }
+            
+            this.filteredTodos = filtered;
+        },
+        
+        validateInput() {
+            // Add input validation logic here
+        },
+        
+        handleSubmit(event) {
+            if (this.newTaskTitle.trim() === '') {
+                event.preventDefault();
+                alert('Please enter a task title');
+                return false;
+            }
+        },
+        
+        confirmDelete(event, title) {
+            if (!confirm(`Are you sure you want to delete "${title}"?`)) {
+                event.preventDefault();
+                return false;
+            }
+        },
+        
+        formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+    }
+}
+</script>
 {% endblock content %}
