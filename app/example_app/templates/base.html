@@ -1,26 +1,250 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Default Title{% endblock title %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <meta name="description" content="Modern Task Master - A beautiful, feature-rich task management web application with real-time interactivity and comprehensive productivity tools.">
+    <meta name="keywords" content="task management, productivity, todo, dashboard, modern web app">
+    <meta name="author" content="Modern Web App">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}Modern Task Master{% endblock og_title %}">
+    <meta property="og:description" content="A beautiful task management application with modern UI and powerful features">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{% block twitter_title %}Modern Task Master{% endblock twitter_title %}">
+    <meta property="twitter:description" content="A beautiful task management application with modern UI and powerful features">
+    
+    <title>{% block title %}Modern Web App{% endblock title %}</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
 
+        [data-theme="dark"] {
+            --bulma-background: #1a1a1a;
+            --bulma-background-l: #2a2a2a;
+            --bulma-text: #ffffff;
+            --bulma-text-weak: #b5b5b5;
+        }
+
+        .gradient-bg {
+            background: var(--primary-gradient);
+        }
+
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .animated-button {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .animated-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .animated-button:hover::before {
+            left: 100%;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .navbar-brand .title {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .todo-item {
+            border-left: 4px solid #3273dc;
+            transition: all 0.3s ease;
+        }
+
+        .todo-item.completed {
+            border-left-color: #48c774;
+            opacity: 0.7;
+        }
+
+        .dark-mode-toggle {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .dark-mode-toggle:hover {
+            transform: rotate(180deg);
+        }
+    </style>
 </head>
-<body>
-    <nav class="p-4">
-        <!-- Navigation goes here -->
+<body x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" x-init="$watch('darkMode', value => localStorage.setItem('darkMode', value))" :data-theme="darkMode ? 'dark' : 'light'" :class="darkMode ? 'has-background-dark has-text-light' : ''">
+    <nav class="navbar gradient-bg" role="navigation" aria-label="main navigation" x-data="{ mobileMenuOpen: false }">
+        <div class="navbar-brand">
+            <div class="navbar-item">
+                <h1 class="title is-3 has-text-white">
+                    <i class="fas fa-rocket mr-2"></i>
+                    Modern Web App
+                </h1>
+            </div>
+            <a role="button" class="navbar-burger has-text-white" :class="{ 'is-active': mobileMenuOpen }" @click="mobileMenuOpen = !mobileMenuOpen">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+
+        <div class="navbar-menu" :class="{ 'is-active': mobileMenuOpen }" @click="mobileMenuOpen = false">
+            <div class="navbar-start">
+                <a href="{% url 'example_app:todo_form' %}" class="navbar-item">
+                    <span class="icon">
+                        <i class="fas fa-home"></i>
+                    </span>
+                    <span>Home</span>
+                </a>
+                <a href="{% url 'example_app:dashboard' %}" class="navbar-item">
+                    <span class="icon">
+                        <i class="fas fa-chart-line"></i>
+                    </span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'example_app:todo_list' %}" class="navbar-item">
+                    <span class="icon">
+                        <i class="fas fa-list"></i>
+                    </span>
+                    <span>All Tasks</span>
+                </a>
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <button @click="darkMode = !darkMode" class="button is-light dark-mode-toggle">
+                            <span class="icon">
+                                <i x-show="!darkMode" class="fas fa-moon"></i>
+                                <i x-show="darkMode" class="fas fa-sun"></i>
+                            </span>
+                        </button>
+                        <a href="/admin/" class="button is-light">
+                            <span class="icon">
+                                <i class="fas fa-cog"></i>
+                            </span>
+                            <span>Admin</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </nav>
 
-    <main>
+    <main class="section fade-in">
         {% block content %}
         <!-- Default content goes here -->
         {% endblock content %}
     </main>
 
-    <footer class="p-4">
-        <!-- Footer goes here -->
+    <footer class="footer" :class="darkMode ? 'has-background-dark has-text-light' : ''">
+        <div class="content has-text-centered">
+            <p>
+                <strong>Modern Web App</strong> powered by <strong>Django</strong>. 
+                Built with ❤️ using modern web technologies.
+            </p>
+            <div class="tags is-centered mt-3">
+                <span class="tag is-primary">Django</span>
+                <span class="tag is-info">Alpine.js</span>
+                <span class="tag is-success">Bulma</span>
+                <span class="tag is-warning">SQLite</span>
+            </div>
+        </div>
     </footer>
+
+    <script>
+        // Add some interactive enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add ripple effect to buttons
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.style.cssText = `
+                        position: absolute;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, 0.6);
+                        transform: scale(0);
+                        animation: ripple 600ms linear;
+                        width: ${size}px;
+                        height: ${size}px;
+                        left: ${x}px;
+                        top: ${y}px;
+                    `;
+                    
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+            
+            // Add CSS for ripple animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes ripple {
+                    to {
+                        transform: scale(4);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
 </body>
 </html>

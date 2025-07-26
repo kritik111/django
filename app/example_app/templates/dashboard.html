@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard - Task Analytics
+{% endblock title %}
+
+{% block content %}
+<div class="container" x-data="dashboardApp()" x-init="init()">
+    <!-- Page Header -->
+    <div class="hero is-medium mb-6">
+        <div class="hero-body has-text-centered">
+            <h1 class="title is-1 has-text-weight-bold fade-in">
+                <span class="icon is-large has-text-primary">
+                    <i class="fas fa-chart-line"></i>
+                </span>
+                Dashboard
+            </h1>
+            <p class="subtitle is-4 fade-in">Your productivity analytics at a glance</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="columns is-multiline mb-6">
+        <div class="column is-3">
+            <div class="box has-text-centered hover-lift gradient-bg">
+                <div class="content">
+                    <span class="icon is-large has-text-white">
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </span>
+                    <p class="title is-3 has-text-white">{{ total_todos }}</p>
+                    <p class="subtitle is-6 has-text-white">Total Tasks</p>
+                </div>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="box has-text-centered hover-lift" style="background: var(--success-gradient);">
+                <div class="content">
+                    <span class="icon is-large has-text-white">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </span>
+                    <p class="title is-3 has-text-white">{{ completed_todos }}</p>
+                    <p class="subtitle is-6 has-text-white">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="box has-text-centered hover-lift" style="background: var(--warning-gradient);">
+                <div class="content">
+                    <span class="icon is-large has-text-white">
+                        <i class="fas fa-hourglass-half fa-2x"></i>
+                    </span>
+                    <p class="title is-3 has-text-white">{{ pending_todos }}</p>
+                    <p class="subtitle is-6 has-text-white">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="box has-text-centered hover-lift" style="background: var(--danger-gradient);">
+                <div class="content">
+                    <span class="icon is-large has-text-white">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </span>
+                    <p class="title is-3 has-text-white">{{ overdue_todos|length }}</p>
+                    <p class="subtitle is-6 has-text-white">Overdue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Analytics -->
+    <div class="columns">
+        <!-- Progress Chart -->
+        <div class="column is-6">
+            <div class="box">
+                <h3 class="title is-4">
+                    <span class="icon has-text-info">
+                        <i class="fas fa-chart-pie"></i>
+                    </span>
+                    Task Distribution
+                </h3>
+                <div class="content">
+                    <canvas id="taskChart" width="300" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="column is-6">
+            <div class="box">
+                <h3 class="title is-4">
+                    <span class="icon has-text-success">
+                        <i class="fas fa-history"></i>
+                    </span>
+                    Recent Tasks
+                </h3>
+                <div class="content">
+                    {% if recent_todos %}
+                        {% for todo in recent_todos %}
+                        <div class="media">
+                            <div class="media-left">
+                                <span class="icon" :class="{% if todo.completed %}has-text-success{% else %}has-text-warning{% endif %}">
+                                    <i class="{% if todo.completed %}fas fa-check{% else %}fas fa-clock{% endif %}"></i>
+                                </span>
+                            </div>
+                            <div class="media-content">
+                                <p class="is-size-6">
+                                    <strong>{{ todo.title }}</strong>
+                                    <span class="tag is-small {{ todo.priority }}">{{ todo.get_priority_display }}</span>
+                                </p>
+                                <p class="is-size-7 has-text-grey">{{ todo.created_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="has-text-grey">No recent tasks</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Tasks Alert -->
+    {% if overdue_todos %}
+    <div class="columns">
+        <div class="column">
+            <div class="notification is-warning">
+                <button class="delete"></button>
+                <h4 class="title is-5">
+                    <span class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </span>
+                    Overdue Tasks Alert
+                </h4>
+                <p>You have {{ overdue_todos|length }} overdue task{{ overdue_todos|length|pluralize }}:</p>
+                <ul class="mt-3">
+                    {% for todo in overdue_todos %}
+                    <li>
+                        <strong>{{ todo.title }}</strong> - Due: {{ todo.due_date|date:"M d, Y H:i" }}
+                        <a href="{% url 'example_app:toggle_todo' todo.id %}" class="button is-small is-success ml-2">Mark Complete</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="columns">
+        <div class="column">
+            <div class="box">
+                <h3 class="title is-4">
+                    <span class="icon has-text-primary">
+                        <i class="fas fa-bolt"></i>
+                    </span>
+                    Quick Actions
+                </h3>
+                <div class="buttons">
+                    <a href="{% url 'example_app:todo_form' %}" class="button is-primary is-large">
+                        <span class="icon">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                        <span>Add New Task</span>
+                    </a>
+                    <a href="{% url 'example_app:todo_list' %}" class="button is-info is-large">
+                        <span class="icon">
+                            <i class="fas fa-list"></i>
+                        </span>
+                        <span>View All Tasks</span>
+                    </a>
+                    <button @click="markAllCompleted()" class="button is-success is-large" :disabled="pendingCount === 0">
+                        <span class="icon">
+                            <i class="fas fa-check-double"></i>
+                        </span>
+                        <span>Complete All Pending</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function dashboardApp() {
+    return {
+        stats: {
+            total: {{ total_todos }},
+            completed: {{ completed_todos }},
+            pending: {{ pending_todos }},
+            overdue: {{ overdue_todos|length }}
+        },
+        
+        get pendingCount() {
+            return this.stats.pending;
+        },
+        
+        init() {
+            this.createTaskChart();
+            this.setupNotificationDismissals();
+        },
+        
+        createTaskChart() {
+            const ctx = document.getElementById('taskChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Pending', 'Overdue'],
+                    datasets: [{
+                        data: [this.stats.completed, this.stats.pending - this.stats.overdue, this.stats.overdue],
+                        backgroundColor: [
+                            '#48c774',
+                            '#ffdd57',
+                            '#f14668'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        },
+        
+        setupNotificationDismissals() {
+            document.querySelectorAll('.notification .delete').forEach(button => {
+                button.addEventListener('click', () => {
+                    button.parentElement.style.display = 'none';
+                });
+            });
+        },
+        
+        async markAllCompleted() {
+            try {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                 document.querySelector('[name=csrf_token]')?.value ||
+                                 this.getCsrfFromCookie();
+                
+                const response = await fetch('/todos/api/bulk-action/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        action: 'complete_all',
+                        todo_ids: [] // Will be populated by backend for all pending
+                    })
+                });
+                
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to complete tasks');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred');
+            }
+        },
+        
+        getCsrfFromCookie() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
+        }
+    }
+}
+</script>
+{% endblock content %}
