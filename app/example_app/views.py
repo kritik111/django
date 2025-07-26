@@ -112,21 +112,25 @@ def bulk_action_api(request):
         action = data.get('action')
         todo_ids = data.get('todo_ids', [])
         
-        if not todo_ids:
+        # Special case: if todo_ids is empty and action is complete_all, get all pending tasks
+        if not todo_ids and action == 'complete_all':
+            todos = Todo.objects.filter(completed=False)
+            todo_ids = list(todos.values_list('id', flat=True))
+        elif not todo_ids:
             return JsonResponse({'success': False, 'message': 'No todos selected'})
-        
-        todos = Todo.objects.filter(id__in=todo_ids)
+        else:
+            todos = Todo.objects.filter(id__in=todo_ids)
         
         if action == 'complete_all':
-            todos.update(completed=True)
-            message = f'{len(todo_ids)} tasks marked as completed'
+            updated_count = todos.update(completed=True)
+            message = f'{updated_count} tasks marked as completed'
         elif action == 'delete_all':
             count = todos.count()
             todos.delete()
             message = f'{count} tasks deleted'
         elif action == 'mark_pending':
-            todos.update(completed=False)
-            message = f'{len(todo_ids)} tasks marked as pending'
+            updated_count = todos.update(completed=False)
+            message = f'{updated_count} tasks marked as pending'
         else:
             return JsonResponse({'success': False, 'message': 'Invalid action'})
             

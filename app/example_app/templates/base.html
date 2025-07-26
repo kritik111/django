@@ -3,7 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Modern Task Master - A beautiful, feature-rich task management web application with real-time interactivity and comprehensive productivity tools.">
+    <meta name="keywords" content="task management, productivity, todo, dashboard, modern web app">
+    <meta name="author" content="Modern Web App">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}Modern Task Master{% endblock og_title %}">
+    <meta property="og:description" content="A beautiful task management application with modern UI and powerful features">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{% block twitter_title %}Modern Task Master{% endblock twitter_title %}">
+    <meta property="twitter:description" content="A beautiful task management application with modern UI and powerful features">
+    
     <title>{% block title %}Modern Web App{% endblock title %}</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -99,8 +119,8 @@
         }
     </style>
 </head>
-<body x-data="{ darkMode: false }" :data-theme="darkMode ? 'dark' : 'light'" :class="darkMode ? 'has-background-dark has-text-light' : ''">
-    <nav class="navbar gradient-bg" role="navigation" aria-label="main navigation">
+<body x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" x-init="$watch('darkMode', value => localStorage.setItem('darkMode', value))" :data-theme="darkMode ? 'dark' : 'light'" :class="darkMode ? 'has-background-dark has-text-light' : ''">
+    <nav class="navbar gradient-bg" role="navigation" aria-label="main navigation" x-data="{ mobileMenuOpen: false }">
         <div class="navbar-brand">
             <div class="navbar-item">
                 <h1 class="title is-3 has-text-white">
@@ -108,9 +128,14 @@
                     Modern Web App
                 </h1>
             </div>
+            <a role="button" class="navbar-burger has-text-white" :class="{ 'is-active': mobileMenuOpen }" @click="mobileMenuOpen = !mobileMenuOpen">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
         </div>
 
-        <div class="navbar-menu">
+        <div class="navbar-menu" :class="{ 'is-active': mobileMenuOpen }" @click="mobileMenuOpen = false">
             <div class="navbar-start">
                 <a href="{% url 'example_app:todo_form' %}" class="navbar-item">
                     <span class="icon">

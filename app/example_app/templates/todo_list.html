@@ -214,7 +214,7 @@ Task List - All Your Tasks
                     </div>
 
                     <footer class="card-footer">
-                        <form method="post" :action="'/{{ todo.id }}/toggle/'" class="card-footer-item">
+                        <form method="post" :action="`/${todo.id}/toggle/`" class="card-footer-item">
                             {% csrf_token %}
                             <button 
                                 type="submit" 
@@ -227,7 +227,7 @@ Task List - All Your Tasks
                                 <span x-text="todo.completed ? 'Undo' : 'Complete'"></span>
                             </button>
                         </form>
-                        <form method="post" :action="'/{{ todo.id }}/delete/'" class="card-footer-item">
+                        <form method="post" :action="`/${todo.id}/delete/`" class="card-footer-item">
                             {% csrf_token %}
                             <button 
                                 type="submit" 
@@ -356,11 +356,15 @@ function todoListApp() {
             if (this.selectedTasks.length === 0) return;
             
             try {
-                const response = await fetch('/api/bulk-action/', {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                 document.querySelector('[name=csrf_token]')?.value ||
+                                 this.getCsrfFromCookie();
+                
+                const response = await fetch('/todos/api/bulk-action/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify({
                         action: action,
@@ -379,6 +383,17 @@ function todoListApp() {
                 console.error('Error:', error);
                 alert('An error occurred');
             }
+        },
+        
+        getCsrfFromCookie() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
         },
         
         confirmDelete(event, title) {

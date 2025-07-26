@@ -49,44 +49,78 @@ Task Master - Your Productivity Hub
                 </h2>
                 <form method="post" @submit="handleSubmit">
                     {% csrf_token %}
-                    <div class="field">
-                        <label class="label">Task Title</label>
-                        <div class="control has-icons-left">
-                            <input 
-                                class="input is-large" 
-                                type="text" 
-                                name="title" 
-                                placeholder="What needs to be done?"
-                                required
-                                x-model="newTaskTitle"
-                                @input="validateInput"
-                            >
-                            <span class="icon is-left">
-                                <i class="fas fa-pencil-alt"></i>
-                            </span>
-                        </div>
-                        <p class="help" x-show="newTaskTitle.length > 0" x-text="'Characters: ' + newTaskTitle.length + '/200'"></p>
-                    </div>
-                    <div class="field">
-                        <label class="label">Priority Level</label>
-                        <div class="control">
-                            <div class="select is-fullwidth">
-                                <select name="priority" x-model="newTaskPriority">
-                                    <option value="low">🟢 Low Priority</option>
-                                    <option value="medium" selected>🟡 Medium Priority</option>
-                                    <option value="high">🔴 High Priority</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <div class="control">
-                            <label class="checkbox">
-                                <input type="checkbox" name="completed">
-                                Mark as completed immediately
-                            </label>
-                        </div>
-                    </div>
+                                         <div class="field">
+                         <label class="label">Task Title</label>
+                         <div class="control has-icons-left has-icons-right">
+                             <input 
+                                 class="input is-large" 
+                                 :class="{'is-danger': newTaskTitle.length > 200, 'is-success': newTaskTitle.length > 0 && newTaskTitle.length <= 200}"
+                                 type="text" 
+                                 name="title" 
+                                 placeholder="What needs to be done?"
+                                 required
+                                 maxlength="200"
+                                 x-model="newTaskTitle"
+                                 @input="validateInput"
+                             >
+                             <span class="icon is-left">
+                                 <i class="fas fa-pencil-alt"></i>
+                             </span>
+                             <span class="icon is-right" x-show="newTaskTitle.length > 0">
+                                 <i class="fas fa-check" x-show="newTaskTitle.length <= 200 && newTaskTitle.length > 0" style="color: #48c774;"></i>
+                                 <i class="fas fa-exclamation-triangle" x-show="newTaskTitle.length > 200" style="color: #f14668;"></i>
+                             </span>
+                         </div>
+                         <p class="help" :class="{'has-text-danger': newTaskTitle.length > 200}" x-show="newTaskTitle.length > 0" x-text="'Characters: ' + newTaskTitle.length + '/200'"></p>
+                         <p class="help is-danger" x-show="newTaskTitle.length > 200">Title is too long!</p>
+                     </div>
+                                         <div class="field">
+                         <label class="label">Description (Optional)</label>
+                         <div class="control">
+                             <textarea 
+                                 class="textarea" 
+                                 name="description" 
+                                 placeholder="Add more details about this task..."
+                                 rows="3"
+                                 x-model="newTaskDescription"
+                             ></textarea>
+                         </div>
+                         <p class="help" x-show="newTaskDescription.length > 0" x-text="'Characters: ' + newTaskDescription.length"></p>
+                     </div>
+                     <div class="field">
+                         <label class="label">Priority Level</label>
+                         <div class="control">
+                             <div class="select is-fullwidth">
+                                 <select name="priority" x-model="newTaskPriority">
+                                     <option value="low">🟢 Low Priority</option>
+                                     <option value="medium" selected>🟡 Medium Priority</option>
+                                     <option value="high">🔴 High Priority</option>
+                                 </select>
+                             </div>
+                         </div>
+                     </div>
+                     <div class="field">
+                         <label class="label">Due Date (Optional)</label>
+                         <div class="control has-icons-left">
+                             <input 
+                                 class="input" 
+                                 type="datetime-local" 
+                                 name="due_date"
+                                 x-model="newTaskDueDate"
+                             >
+                             <span class="icon is-left">
+                                 <i class="fas fa-calendar"></i>
+                             </span>
+                         </div>
+                     </div>
+                     <div class="field">
+                         <div class="control">
+                             <label class="checkbox">
+                                 <input type="checkbox" name="completed">
+                                 Mark as completed immediately
+                             </label>
+                         </div>
+                     </div>
                     <div class="field">
                         <div class="control">
                             <button type="submit" class="button is-primary is-large is-fullwidth animated-button">
@@ -191,32 +225,32 @@ Task Master - Your Productivity Hub
                                     </div>
                                 </div>
                                 <div class="buttons">
-                                    <form method="post" :action="'/{{ todo.id }}/toggle/'" style="display: inline;">
-                                        {% csrf_token %}
-                                        <button 
-                                            type="submit" 
-                                            class="button is-small animated-button"
-                                            :class="todo.completed ? 'is-warning' : 'is-success'"
-                                        >
-                                            <span class="icon is-small">
-                                                <i :class="todo.completed ? 'fas fa-undo' : 'fas fa-check'"></i>
-                                            </span>
-                                            <span x-text="todo.completed ? 'Undo' : 'Done'"></span>
-                                        </button>
-                                    </form>
-                                    <form method="post" :action="'/{{ todo.id }}/delete/'" style="display: inline;">
-                                        {% csrf_token %}
-                                        <button 
-                                            type="submit" 
-                                            class="button is-small is-danger animated-button"
-                                            @click="confirmDelete($event, todo.title)"
-                                        >
-                                            <span class="icon is-small">
-                                                <i class="fas fa-trash"></i>
-                                            </span>
-                                            <span>Delete</span>
-                                        </button>
-                                    </form>
+                                                                         <form method="post" :action="`/${todo.id}/toggle/`" style="display: inline;">
+                                         {% csrf_token %}
+                                         <button 
+                                             type="submit" 
+                                             class="button is-small animated-button"
+                                             :class="todo.completed ? 'is-warning' : 'is-success'"
+                                         >
+                                             <span class="icon is-small">
+                                                 <i :class="todo.completed ? 'fas fa-undo' : 'fas fa-check'"></i>
+                                             </span>
+                                             <span x-text="todo.completed ? 'Undo' : 'Done'"></span>
+                                         </button>
+                                     </form>
+                                     <form method="post" :action="`/${todo.id}/delete/`" style="display: inline;">
+                                         {% csrf_token %}
+                                         <button 
+                                             type="submit" 
+                                             class="button is-small is-danger animated-button"
+                                             @click="confirmDelete($event, todo.title)"
+                                         >
+                                             <span class="icon is-small">
+                                                 <i class="fas fa-trash"></i>
+                                             </span>
+                                             <span>Delete</span>
+                                         </button>
+                                     </form>
                                 </div>
                             </div>
                         </div>
@@ -250,8 +284,10 @@ function todoApp() {
         searchQuery: '',
         filterStatus: 'all',
         newTaskTitle: '',
+        newTaskDescription: '',
         newTaskPriority: 'medium',
-        darkMode: false,
+        newTaskDueDate: '',
+        darkMode: localStorage.getItem('darkMode') === 'true',
         
         get totalTodos() {
             return this.todos.length;
@@ -312,9 +348,48 @@ function todoApp() {
         handleSubmit(event) {
             if (this.newTaskTitle.trim() === '') {
                 event.preventDefault();
-                alert('Please enter a task title');
+                this.showNotification('Please enter a task title', 'error');
                 return false;
             }
+            if (this.newTaskTitle.length > 200) {
+                event.preventDefault();
+                this.showNotification('Task title is too long', 'error');
+                return false;
+            }
+            // Show loading state
+            event.target.querySelector('button[type="submit"]').classList.add('is-loading');
+        },
+        
+        showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification is-${type === 'error' ? 'danger' : type} is-light`;
+            notification.innerHTML = `
+                <button class="delete"></button>
+                ${message}
+            `;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                max-width: 400px;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+            
+            // Remove on click
+            notification.querySelector('.delete').addEventListener('click', () => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            });
         },
         
         confirmDelete(event, title) {

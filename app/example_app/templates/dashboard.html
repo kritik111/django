@@ -238,11 +238,15 @@ function dashboardApp() {
         
         async markAllCompleted() {
             try {
-                const response = await fetch('/api/bulk-action/', {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                 document.querySelector('[name=csrf_token]')?.value ||
+                                 this.getCsrfFromCookie();
+                
+                const response = await fetch('/todos/api/bulk-action/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        'X-CSRFToken': csrfToken
                     },
                     body: JSON.stringify({
                         action: 'complete_all',
@@ -259,6 +263,17 @@ function dashboardApp() {
                 console.error('Error:', error);
                 alert('An error occurred');
             }
+        },
+        
+        getCsrfFromCookie() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
         }
     }
 }
